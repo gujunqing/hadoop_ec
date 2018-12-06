@@ -112,8 +112,8 @@ public class RSRawDecoder extends RawErasureDecoder {
       }
     }
 
-    //generateDecodeMatrix(erasedIndexes);
-    generatePCMDecodeMatrix(erasedIndexes);
+    generateDecodeMatrix(erasedIndexes);
+    // generatePCMDecodeMatrix(erasedIndexes);
 
     RSUtil.initTables(getNumDataUnits(), erasedIndexes.length,
         decodeMatrix, 0, gfTables);
