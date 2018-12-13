@@ -81,7 +81,7 @@ public class GenHDFSData {
 
     public static final void main(String[] args) throws Exception {
         int nodeSize = 128*1024*1024;
-        int cellSize = 1024*16;
+        int cellSize = 1024*128;
         int n = 6;
         GenHDFSData hdfs = new GenHDFSData(n, cellSize, nodeSize);
         hdfs.fillFile();

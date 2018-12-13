@@ -5,7 +5,6 @@ import java.util.Random;
 public class hadoopEC_MSR {
     private MSRRawDecoder decoder;
     private MSRRawEncoder encoder;
-    private Random randomGenerator;
     private ErasureCoderOptions coderOptions;
     private int n;
     private int k;
@@ -45,7 +44,7 @@ public class hadoopEC_MSR {
             encodeStep();
             for (int j=0; j < (n-k); j++) {
                 for (int e=0; e < l; e++){
-                    String pathName = "MSR" + prefix + String.valueOf(j) + "/" + String.valueOf(i*l+e);
+                    String pathName = "MSR64" + prefix + String.valueOf(j) + "/" + String.valueOf(i*l+e);
                     hdfsWrite.createFile(pathName, parityData[j*l+e]);
                 }
             }
@@ -106,7 +105,7 @@ public class hadoopEC_MSR {
                         if (p < k)
                             inputData[p*l+j] = hdfsRead.readFile(prefix+String.valueOf(p)+'/'+String.valueOf(i*l+j));
                         else
-                            inputData[p*l+j] = hdfsRead.readFile("MSR"+prefix+String.valueOf(p-k)+'/'+String.valueOf(i*l+j));
+                            inputData[p*l+j] = hdfsRead.readFile("MSR64"+prefix+String.valueOf(p-k)+'/'+String.valueOf(i*l+j));
                     } else {
                         inputData[p*l+j] = null;
                     }
@@ -126,7 +125,7 @@ public class hadoopEC_MSR {
     }
 
     public static final void main(String[] args) throws Exception {
-        hadoopEC_MSR hec = new hadoopEC_MSR(12,6,1024*256, 128*1024*1024);
+        hadoopEC_MSR hec = new hadoopEC_MSR(6,4,1024*128, 128*1024*1024);
         int cellsize = hec.cellsize;
         String prefix = String.valueOf(cellsize) + "_";
         hec.nodeEncode(prefix);

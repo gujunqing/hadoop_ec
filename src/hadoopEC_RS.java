@@ -119,7 +119,7 @@ public class hadoopEC_RS {
     }
 
     public static final void main(String[] args) throws Exception {
-        hadoopEC_RS hec = new hadoopEC_RS(12,6,1024*256, 128*1024*1024);
+        hadoopEC_RS hec = new hadoopEC_RS(12,6,1024*128, 128*1024*1024);
         int cellsize = hec.cellsize;
         String prefix = String.valueOf(cellsize) + "_";
         hec.nodeEncode(prefix);
