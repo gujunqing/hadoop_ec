@@ -45,6 +45,7 @@ public class MSRRawDecoder extends RawErasureDecoder {
      */
     // private byte[] gfTables;
     private int dataLen;
+    private byte[] gfTables;
     private int[] validIndexes;
     private int numErasedDataUnits;
     private boolean[] erasureFlags;
@@ -81,18 +82,6 @@ public class MSRRawDecoder extends RawErasureDecoder {
         CoderUtil.resetOutputBuffers(decodingState.outputs,
                 decodingState.outputOffsets, dataLen);
 
-        this.erasureFlags = new boolean[n*l];
-        this.numErasedDataUnits = 0;
-        // numErasedDataUnits = decodingState.erasedIndexes.length;
-
-        for (int i = 0; i < decodingState.erasedIndexes.length; i++) {
-            int index =decodingState.erasedIndexes[i];
-            for (int j=0; j < l; j++)
-                erasureFlags[index*l+j] = true;
-            numErasedDataUnits++;
-        }
-        assert numErasedDataUnits/l == decodingState.erasedIndexes.length;
-
         if (decodingState.erasedIndexes.length == 1){
             singlePrepareDecoding(decodingState.inputs, decodingState.erasedIndexes);
             byte[][] realInputs = new byte[(n-1)*l/r][];
@@ -101,18 +90,24 @@ public class MSRRawDecoder extends RawErasureDecoder {
             MSRDecode(decodeMatrix, dataLen, realInputs, decodingState.outputs);
             // singleMSRDecode();
         } else {
-            mulPrepareDecoding(decodingState.inputs, decodingState.erasedIndexes);
+            if (isUsePCM()) {
+                mulPrepareAPCMDecoding(decodingState.inputs, decodingState.erasedIndexes);
+            } else {
+                mulPrepareDecoding(decodingState.inputs, decodingState.erasedIndexes);
+            }
             byte[][] realInputs = new byte[k*l][];
-            // int[] realInputOffsets = new int[getNumDataUnits()];
+            int[] realInputOffsets = new int[getNumDataUnits()*l];
             for (int i = 0; i < k*l; i++) {
                 realInputs[i] = decodingState.inputs[validIndexes[i]];
-                // realInputOffsets[i] = decodingState.inputOffsets[validIndexes[i]];
+                realInputOffsets[i] = decodingState.inputOffsets[validIndexes[i]];
             }
-            MSRDecode(decodeMatrix, dataLen, realInputs, decodingState.outputs);
-            // RSUtil.encodeData(gfTables, dataLen, realInputs, realInputOffsets,
-            //        decodingState.outputs, decodingState.outputOffsets);
+            this.gfTables = new byte[decodingState.erasedIndexes.length*l * k*l * 32];
+            // MSRDecode(decodeMatrix, dataLen, realInputs, decodingState.outputs);
+            RSUtil.initTables(getNumDataUnits()*l, decodingState.erasedIndexes.length*l,
+                    decodeMatrix, 0, gfTables);
+            RSUtil.encodeData(gfTables, dataLen, realInputs, realInputOffsets,
+                    decodingState.outputs, decodingState.outputOffsets);
         }
-
     }
 
     private void MSRDecode(byte[] encodeMatrix, int encodeLen, byte[][] inputs,
@@ -127,9 +122,7 @@ public class MSRRawDecoder extends RawErasureDecoder {
         int numOutputs = outputs.length;
 
         // DumpUtil.dumpMatrix(encodeMatrix, numOutputs, numInputs);
-
         // the encodeLen must be the mulriple of l and some other assertion
-
         // start to encode
         int i, j, p;
         byte temp;
@@ -144,7 +137,55 @@ public class MSRRawDecoder extends RawErasureDecoder {
         }
     }
 
-    private void mulPrepareDecoding(byte[][] inputs, int[] erasedIndexes){
+    private void mulPrepareAPCMDecoding(byte[][] inputs, int[] erasedIndexes) {
+        int n = getNumAllUnits();
+        int k = getNumDataUnits();
+        int r = n - k;
+        int s = r;
+        int m = n / s;
+        int l = (int)Math.pow(s, m);
+        int i, j, p, q;
+        r = erasedIndexes.length;
+        int rr = n-k-r;
+        byte tar, inv, tmp;
+
+        // find valid input k*l size
+        int[] tmpValidIndexes = CoderUtil.getValidIndexes(inputs);
+        this.validIndexes = Arrays.copyOf(tmpValidIndexes, tmpValidIndexes.length);
+        // generate decode matrix
+        this.decodeMatrix = new byte[r*l*k*l];
+        // this.gfTables = new byte[r*l * k*l * 32];
+
+        // DumpUtil.dumpMatrix(MSRMatrix, r*l, n*l);
+        for (i=0; i < r; i++) {
+            int idx = erasedIndexes[i];
+            for (j=0; j < l; j++){
+                tar = MSRMatrix[(i*l+j) * n*l + idx*l+j];
+                if (tar != 1){
+                    inv = GF256.gfInv(tar);
+                    for (p = 0; p < (n-rr)*l; p++)
+                        MSRMatrix[(i*l+j) * l*n + p] = GF256.gfMul(MSRMatrix[(i*l+j) * l*n + p], inv);
+                }
+                for (p = 0; p < r*l; p++) {
+                    if (p == (i*l+j))  continue;
+                    tmp = MSRMatrix[p * l*n + idx*l+j];
+                    for (q = 0; q < (n-rr)*l; q++)
+                        MSRMatrix[p * l*n + q] ^= GF256.gfMul(MSRMatrix[(i*l+j) * l*n + q], tmp);
+                }
+            }
+        }
+        // Divide the PCM matrix
+        int pos, t;
+        for (i = 0; i < r*l; i++) {
+            pos = i*n*l;
+            for (j = 0; j < k*l; j++) {
+                t = validIndexes[j];
+                decodeMatrix[k*l * i + j] = MSRMatrix[pos + t];
+            }
+        }
+    }
+
+    private void mulPreparePCMDecoding(byte[][] inputs, int[] erasedIndexes){
         int n = getNumAllUnits();
         int k = getNumDataUnits();
         int r = n - k;
@@ -192,6 +233,77 @@ public class MSRRawDecoder extends RawErasureDecoder {
         for (i=0; i < numErasedDataUnits*l; i++){
             for (j=0; j < k*l; j++) {
                 decodeMatrix[i*k*l + j] = tmpDecodeMatrix[i*k*l + j];
+            }
+        }
+    }
+
+    private void mulPrepareDecoding(byte[][] inputs, int[] erasedIndexes) {
+        int n = getNumAllUnits();
+        int k = getNumDataUnits();
+        int r = n - k;
+        int s = r;
+        int m = n / s;
+        int l = (int)Math.pow(s, m);
+        int i, j, p, q, t;
+        r = erasedIndexes.length;
+
+        byte[] encodeMatrix = new byte[getNumAllUnits() * getNumDataUnits() * l * l];
+        byte[] tmpMatrix = new byte[getNumDataUnits() * getNumDataUnits() * l * l];
+        byte[] invertMatrix = new byte[getNumDataUnits() * getNumDataUnits() * l * l];
+        decodeMatrix = new byte[r * k * l * l];
+        RSUtil.genMSREncodeMatrix(MSRMatrix, encodeMatrix, getNumAllUnits(), getNumDataUnits());
+
+        System.out.println(" ");
+        // DumpUtil.dumpMatrix(MSRMatrix, s*l, n*l);
+
+        this.erasureFlags = new boolean[n*l];
+        this.numErasedDataUnits = 0;
+        // numErasedDataUnits = decodingState.erasedIndexes.length;
+
+        for (i = 0; i < erasedIndexes.length; i++) {
+            int index =erasedIndexes[i];
+            for (j=0; j < l; j++) {
+                erasureFlags[index * l + j] = true;
+                if (index < getNumDataUnits()) {
+                    numErasedDataUnits++;
+                }
+            }
+        }
+        assert numErasedDataUnits/l == erasedIndexes.length;
+
+        // find valid input k*l size
+        int[] tmpValidIndexes = CoderUtil.getValidIndexes(inputs);
+        this.validIndexes = Arrays.copyOf(tmpValidIndexes, tmpValidIndexes.length);
+
+        for (i = 0; i < k*l; i++) {
+            t = validIndexes[i];
+            for (j = 0; j < k*l; j++) {
+                tmpMatrix[k*l * i + j] =
+                        encodeMatrix[k*l * t + j];
+            }
+        }
+
+        GF256.gfInvertMatrix(tmpMatrix, invertMatrix, getNumDataUnits()*l);
+
+        for (i = 0; i < numErasedDataUnits/l; i++) {
+            for (q = 0; q < l; q++) {
+                for (j = 0; j < k*l; j++) {
+                    decodeMatrix[k*l * (i*l+q) + j] =
+                            invertMatrix[getNumDataUnits()*l * (erasedIndexes[i]*l+q) + j];
+                }
+            }
+        }
+
+        for (p = numErasedDataUnits/l; p < r; p++) {
+            for (q = 0; q < l; q++) {
+                for (i = 0; i < getNumDataUnits()*l; i++) {
+                    byte ttmp = 0;
+                    for (j = 0; j < getNumDataUnits()*l; j++) {
+                        ttmp ^= GF256.gfMul(invertMatrix[j * getNumDataUnits()*l + i],
+                                encodeMatrix[getNumDataUnits() * (erasedIndexes[p]*l+q) + j]);
+                    }
+                    decodeMatrix[getNumDataUnits()*l * (p*l+q) + i] = ttmp;
+                }
             }
         }
     }

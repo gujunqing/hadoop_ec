@@ -32,7 +32,8 @@ public class MSRRawEncoder  extends RawErasureEncoder{
     // relevant to schema and won't change during encode calls.
     private byte[] encodeMatrix;
     private byte[] MSRMatrix;
-    /**
+    private byte[] gfTables;
+     /**
      * Array of input tables generated from coding coefficients previously.
      * Must be of size 32*k*rows
      */
@@ -52,15 +53,14 @@ public class MSRRawEncoder  extends RawErasureEncoder{
         int l = (int)Math.pow(s, m);
         encodeMatrix = new byte[getNumAllUnits() * getNumDataUnits() * l * l];
         MSRMatrix = new byte[getNumParityUnits() * getNumAllUnits() * l * l];
-
         // RSUtil.genCauchyMatrix(encodeMatrix, getNumAllUnits(), getNumDataUnits());
         RSUtil.genMSRMatrix(MSRMatrix, getNumAllUnits(), getNumDataUnits());
         // DumpUtil.dumpMatrix(MSRMatrix, getNumParityUnits()*l, getNumAllUnits()*l);
         RSUtil.genMSREncodeMatrix(MSRMatrix, encodeMatrix, getNumAllUnits(), getNumDataUnits());
-        // todo gfTable is not supported right now
-        // gfTables = new byte[getNumAllUnits() * getNumDataUnits() * l * l * 32];
-        // RSUtil.initTables(getNumDataUnits() * l, getNumParityUnits() * l, encodeMatrix,
-        //        getNumDataUnits() * l * getNumDataUnits() * l, gfTables);
+        // DumpUtil.dumpMatrix(encodeMatrix, getNumAllUnits()*l, getNumDataUnits()*l);
+        gfTables = new byte[getNumAllUnits() * getNumDataUnits() * l * l * 32];
+        RSUtil.initTables(getNumDataUnits() * l, getNumParityUnits() * l, encodeMatrix,
+                getNumDataUnits() * l * getNumDataUnits() * l, gfTables);
     }
 
     private void MSREncodeData(byte[] encodeMatrix, int encodeLen, byte[][] inputs,
@@ -98,8 +98,11 @@ public class MSRRawEncoder  extends RawErasureEncoder{
         CoderUtil.resetOutputBuffers(encodingState.outputs,
                 encodingState.outputOffsets,
                 encodingState.encodeLength);
-        // todo, encode data, not support gftable right now
-        MSREncodeData(encodeMatrix, encodingState.encodeLength,
-                encodingState.inputs, encodingState.outputs);
+
+        // MSREncodeData(encodeMatrix, encodingState.encodeLength, encodingState.inputs, encodingState.outputs);
+        RSUtil.encodeData(gfTables, encodingState.encodeLength,
+                encodingState.inputs,
+                encodingState.inputOffsets, encodingState.outputs,
+                encodingState.outputOffsets);
     }
 }

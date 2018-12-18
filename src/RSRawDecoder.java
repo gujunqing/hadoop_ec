@@ -59,7 +59,10 @@ public class RSRawDecoder extends RawErasureDecoder {
     }
 
     encodeMatrix = new byte[numAllUnits * getNumDataUnits()];
-    RSUtil.genCauchyMatrix(encodeMatrix, numAllUnits, getNumDataUnits());
+    if (isUsePCM())
+      RSUtil.genCauchyMatrixPCM(encodeMatrix, numAllUnits, getNumDataUnits());
+    else
+      RSUtil.genCauchyMatrix(encodeMatrix, numAllUnits, getNumDataUnits());
     if (allowVerboseDump()) {
       DumpUtil.dumpMatrix(encodeMatrix, getNumDataUnits(), numAllUnits);
     }
@@ -112,8 +115,11 @@ public class RSRawDecoder extends RawErasureDecoder {
       }
     }
 
-    generateDecodeMatrix(erasedIndexes);
-    // generatePCMDecodeMatrix(erasedIndexes);
+    if (isUsePCM())
+      generatePCMDecodeMatrix(erasedIndexes);
+      // generateNewPCMDecodeMatrix(erasedIndexes);
+    else
+      generateDecodeMatrix(erasedIndexes);
 
     RSUtil.initTables(getNumDataUnits(), erasedIndexes.length,
         decodeMatrix, 0, gfTables);
@@ -122,57 +128,82 @@ public class RSRawDecoder extends RawErasureDecoder {
     }
   }
 
+  private void generateNewPCMDecodeMatrix(int [] erasedIndexes) {
+    int i, j, p, t, pos, idx;
+    int k = getNumDataUnits();
+    int n = getNumAllUnits();
+    int r = erasedIndexes.length;
+    byte[] tarIndex = new byte[r*r];
+    byte tar, inv, tmp;
+
+    // Construct matrix tmpMatrix from encode matrix
+    p = 0;
+    for (i = 0; i < r; i++) {
+      pos = i*n;
+      for (j = 0; j < k; j++) {
+        t = validIndexes[j];
+        decodeMatrix[k * i + j] = encodeMatrix[pos + t];
+      }
+      for (j = 0; j < r; j++){
+        idx = erasedIndexes[j];
+        tarIndex[p++] = encodeMatrix[pos + idx];
+      }
+    }
+
+    for (i = 0; i < r; i++) {
+      tar = tarIndex[i*r+i];
+      inv = GF256.gfInv(tar);
+      for (j = 0; j < k; j++)
+        decodeMatrix[i * k + j] = GF256.gfMul(decodeMatrix[i * k + j], inv);
+      for (j=0; j < r; j++)
+        tarIndex[i * r + j] = GF256.gfMul(tarIndex[i * r + j], inv);
+      for (j = 0; j < r; j++) {
+        if (j == i) continue;
+        tmp = tarIndex[j*r+i];
+        for (p = 0; p < k; p++)
+          decodeMatrix[j * k + p] ^= GF256.gfMul(decodeMatrix[i * k + p], tmp);
+        for (p = 0; p < r; p++)
+          tarIndex[j * r + p] ^= GF256.gfMul(tarIndex[i * r + p], tmp);
+      }
+    }
+    // DumpUtil.dumpMatrix(decodeMatrix, r, k);
+  }
+
   // Generate PCM decode matrix from encode matrix
   private void generatePCMDecodeMatrix(int [] erasedIndexes) {
     int i, j, p;
-    byte[] tmpMatrix = new byte[getNumParityUnits() * getNumAllUnits()];
+    // byte[] tmpMatrix = new byte[getNumParityUnits() * getNumAllUnits()];
     int k = getNumDataUnits();
     int n = getNumAllUnits();
-    int r = getNumParityUnits();
-
-    for (i = 0; i < erasedIndexes.length-1; i++){
-      assert erasedIndexes[i] < erasedIndexes[i+1];
-    }
-
-    // Construct matrix tmpMatrix from encode matrix
-    for (i = 0; i < r; i++) {
-      for (j = 0; j < k; j++) {
-        tmpMatrix[i * n + j] =
-                encodeMatrix[k * k + i * k + j];
-      }
-      tmpMatrix[i * getNumAllUnits() + getNumDataUnits() + i] = 1;
-    }
+    int r = erasedIndexes.length;
+    int rr = n-k-r;
+    byte tar, inv, tmp;
 
     // Get invert matrix
-    for (i = 0; i < erasedIndexes.length; i++) {
+    // DumpUtil.dumpMatrix(encodeMatrix, r, n);
+    for (i = 0; i < r; i++) {
       int idx = erasedIndexes[i];
-      byte tar = tmpMatrix[i * n + idx];
-      byte inv, tmp;
+      tar = encodeMatrix[i * n + idx];
       if (tar != 1){
         inv = GF256.gfInv(tar);
-        for (j = 0; j < n; j++){
-          tmpMatrix[i * n + j] = GF256.gfMul(tmpMatrix[i * n + j], inv);
-        }
+        for (j = 0; j < n-rr; j++)
+          encodeMatrix[i * n + j] = GF256.gfMul(encodeMatrix[i * n + j], inv);
       }
       for (j = 0; j < r; j++) {
-        if (j == i)
-          continue;
-        else if (tmpMatrix[j * n + idx] == 0)
-          continue;
-        tmp = tmpMatrix[j * n + idx];
-        for (p = 0; p < n; p++){
-          tmpMatrix[j * n + p] ^= GF256.gfMul(tmpMatrix[i * n + p], tmp);
-        }
+        if (j == i)  continue;
+        tmp = encodeMatrix[j * n + idx];
+        for (p = 0; p < n - rr; p++)
+          encodeMatrix[j * n + p] ^= GF256.gfMul(encodeMatrix[i * n + p], tmp);
       }
     }
+
     // Divide the PCM matrix
-    for (i = 0; i < erasedIndexes.length; i++) {
-      p = 0;
-      for (j = 0; (p < erasedIndexes.length) && (j - p < k) ; j++) {
-        if (j != erasedIndexes[p])
-          decodeMatrix[i * k + j - p] = tmpMatrix[i * k + j];
-        else
-          p++;
+    int pos, t;
+    for (i = 0; i < r; i++) {
+      pos = i*n;
+      for (j = 0; j < k; j++) {
+        t = validIndexes[j];
+        decodeMatrix[k * i + j] = encodeMatrix[pos + t];
       }
     }
   }
@@ -184,7 +215,7 @@ public class RSRawDecoder extends RawErasureDecoder {
     byte[] tmpMatrix = new byte[getNumAllUnits() * getNumDataUnits()];
 
     // Construct matrix tmpMatrix by removing error rows
-    for (i = 0; i < getNumDataUnits(); i++) {
+    for (i = 0, r=0; i < getNumDataUnits(); i++) {
       r = validIndexes[i];
       for (j = 0; j < getNumDataUnits(); j++) {
         tmpMatrix[getNumDataUnits() * i + j] =

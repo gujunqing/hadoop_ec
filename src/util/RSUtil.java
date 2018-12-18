@@ -72,6 +72,20 @@ public final class RSUtil {
     }
   }
 
+  public static void genCauchyMatrixPCM(byte[] a, int m, int k) {
+    // For the rest choose 1/(i + j) | i != j
+    int pos;
+    for (int i = k; i < m; i++) {
+      pos = (i-k)*m;
+      for (int j = 0; j < k; j++) {
+        a[pos++] = GF256.gfInv((byte) (i ^ j));
+      }
+    }
+
+    for (int i=0; i < m-k; i++)
+      a[i*m+k+i] = 1;
+  }
+
   private static byte gfPow(byte number,int t)
   {
     byte result = 1;
@@ -161,15 +175,12 @@ public final class RSUtil {
         tmpMatrix[i*r*l + j] = MSRmatrix[i*n*l + k*l + j];
     GF256.gfInvertMatrix(tmpMatrix, invertTmpMatrix, r*l);
 
-    /*
-    temporarily do not need this one
+
+    // temporarily do not need this one
     for (i=0; i < k*l; i++) {
-      for (j=0; j < k*l; j++){
-        MSREncodeMatrix[i*k*l + j] = 0;
-      }
       MSREncodeMatrix[i*k*l + i] = 1;
     }
-    */
+
 
     byte temp;
     for (i=0; i < r*l; i++)
@@ -177,7 +188,7 @@ public final class RSUtil {
         temp = 0;
         for (e=0; e < r*l; e++)
           temp ^= GF256.gfMul(invertTmpMatrix[i*r*l + e], MSRmatrix[e*n*l + j]);
-        MSREncodeMatrix[i*k*l + j] = temp;
+        MSREncodeMatrix[k*l*k*l + i*k*l + j] = temp;
       }
   }
 

@@ -26,19 +26,25 @@ public final class ErasureCoderOptions {
   private final boolean allowChangeInputs;
   private final boolean allowVerboseDump;
   private final int numMSRUnits;
+  private final boolean usePCM;
 
   public ErasureCoderOptions(int numDataUnits, int numParityUnits) {
-    this(numDataUnits, numParityUnits, false, false);
+    this(numDataUnits, numParityUnits, false, false, false);
+  }
+
+  public ErasureCoderOptions(int numDataUnits, int numParityUnits, boolean usePCM) {
+    this(numDataUnits, numParityUnits, false, false, usePCM);
   }
 
   public ErasureCoderOptions(int numDataUnits, int numParityUnits,
-                        boolean allowChangeInputs, boolean allowVerboseDump) {
+                        boolean allowChangeInputs, boolean allowVerboseDump, boolean usePCM) {
     this.numDataUnits = numDataUnits;
     this.numParityUnits = numParityUnits;
     this.numAllUnits = numDataUnits + numParityUnits;
     this.allowChangeInputs = allowChangeInputs;
     this.allowVerboseDump = allowVerboseDump;
     this.numMSRUnits = 1;
+    this.usePCM = usePCM;
   }
 
   public ErasureCoderOptions(int numDataUnits, int numParityUnits, int numMSRUnits,
@@ -49,6 +55,7 @@ public final class ErasureCoderOptions {
     this.allowChangeInputs = allowChangeInputs;
     this.allowVerboseDump = allowVerboseDump;
     this.numMSRUnits = numMSRUnits;
+    this.usePCM = false;
   }
 
   /**
@@ -62,6 +69,10 @@ public final class ErasureCoderOptions {
 
   public int getNumMSRUnits(){
     return numMSRUnits;
+  }
+
+  public boolean isUsePCM() {
+    return usePCM;
   }
 
   /**

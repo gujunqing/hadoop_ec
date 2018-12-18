@@ -84,6 +84,10 @@ public abstract class RawErasureDecoder {
     return coderOptions.getNumAllUnits();
   }
 
+  public boolean isUsePCM() {
+    return coderOptions.isUsePCM();
+  }
+
   /**
    * Tell if direct buffer is preferred or not. It's for callers to
    * decide how to allocate coding chunk buffers, using DirectByteBuffer or
