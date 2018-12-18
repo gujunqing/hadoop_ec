@@ -40,7 +40,7 @@ public class testCase {
         this.cellsize = cellsize;
         originData = new byte[k*l][];
         parityData = new byte[r*l][];
-        coderOptions = new ErasureCoderOptions(k, n-k, false);
+        coderOptions = new ErasureCoderOptions(k, n-k, true);
         getDataNode();
         for (int i=0; i < r*l; i++)
             parityData[i] = new byte[cellsize];
@@ -122,7 +122,7 @@ public class testCase {
         testCase ec = new testCase(n, k, cellSize);
         ec.MSRencodeStep();
         long TsumTime = 0;
-        for (int i=0; i<1; i++) {
+        for (int i=0; i<512*1024; i++) {
             long TstartTime = System.currentTimeMillis();
             byte[][] input = ec.MSRgetData();
             ec.MSRdecodeStep(input);

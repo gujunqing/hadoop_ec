@@ -18,7 +18,7 @@ public class hadoopEC_XOR {
         setRSParameter(n, k, cellsize);
         this.nodeSize = nodeSize;
         this.nodeLen = nodeSize/cellsize;
-        coderOptions = new ErasureCoderOptions(k, n-k);
+        coderOptions = new ErasureCoderOptions(k, n-k, false);
         originData = new byte[k][];
         parityData = new byte[(n-k)][];
     }
@@ -58,7 +58,7 @@ public class hadoopEC_XOR {
     }
 
     public static final void main(String[] args) throws Exception {
-        hadoopEC_XOR hec = new hadoopEC_XOR(5,4,1024*256, 128*1024*1024);
+        hadoopEC_XOR hec = new hadoopEC_XOR(5,4,1024*1024*256, 128*1024*1024);
         int cellsize = hec.cellsize;
         String prefix = String.valueOf(cellsize) + "_";
         hec.nodeEncode(prefix);

@@ -25,7 +25,7 @@ public class hadoopEC_RS {
         setRSParameter(n, k, cellsize);
         this.nodeSize = nodeSize;
         this.nodeLen = nodeSize/cellsize;
-        coderOptions = new ErasureCoderOptions(k, n-k);
+        coderOptions = new ErasureCoderOptions(k, n-k, false);
         originData = new byte[k][];
         parityData = new byte[(n-k)][];
     }
@@ -108,10 +108,24 @@ public class hadoopEC_RS {
             long TendTime = System.currentTimeMillis();
             TsumTime += TendTime - TstartTime;
             TsumData += k*cellsize;
-            long startTime = System.currentTimeMillis();
-            hec.RSdecodeStep(inputData);
-            long endTime = System.currentTimeMillis();
-            sumTime += endTime-startTime;
+            int calLen = 1024*1024;
+            for (int p = 0; p<calLen ; p++) {
+                int mlen = cellsize/calLen;
+                byte[][] mInput = new byte[n][];
+                for (int ii=0; ii<n; ii++){
+                    if (inputData[i] == null)
+                        mInput[i] = null;
+                    else {
+                        byte[] tmp = new byte[mlen];
+                        System.arraycopy(inputData[i], mlen*p, tmp, 0, mlen);
+                        mInput[i] = tmp;
+                    }
+                }
+                long startTime = System.currentTimeMillis();
+                hec.RSdecodeStep(mInput);
+                long endTime = System.currentTimeMillis();
+                sumTime += endTime - startTime;
+            }
         }
         System.out.println("The decoding time is：" + sumTime + "ms");
         System.out.println("The Transformation time is：" + TsumTime + "ms");
@@ -119,7 +133,7 @@ public class hadoopEC_RS {
     }
 
     public static final void main(String[] args) throws Exception {
-        hadoopEC_RS hec = new hadoopEC_RS(12,6,1024*128, 128*1024*1024);
+        hadoopEC_RS hec = new hadoopEC_RS(26,24,1024*1024*4, 512*1024*1024);
         int cellsize = hec.cellsize;
         String prefix = String.valueOf(cellsize) + "_";
         hec.nodeEncode(prefix);

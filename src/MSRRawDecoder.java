@@ -253,7 +253,6 @@ public class MSRRawDecoder extends RawErasureDecoder {
         decodeMatrix = new byte[r * k * l * l];
         RSUtil.genMSREncodeMatrix(MSRMatrix, encodeMatrix, getNumAllUnits(), getNumDataUnits());
 
-        System.out.println(" ");
         // DumpUtil.dumpMatrix(MSRMatrix, s*l, n*l);
 
         this.erasureFlags = new boolean[n*l];

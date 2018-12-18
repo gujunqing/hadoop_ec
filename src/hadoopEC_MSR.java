@@ -22,7 +22,7 @@ public class hadoopEC_MSR {
         int m =n/(n-k);
         this.l = (int)Math.pow((n-k), m);
         this.cellsize = cellsize;
-        coderOptions = new ErasureCoderOptions(k, n-k);
+        coderOptions = new ErasureCoderOptions(k, n-k, false);
         originData = new byte[k*l][];
         parityData = new byte[(n-k)*l][];
         this.nodeSize = nodeSize;
@@ -114,10 +114,28 @@ public class hadoopEC_MSR {
             long TendTime = System.currentTimeMillis();
             TsumTime += TendTime - TstartTime;
             TsumData += k*cellsize;
-            long startTime = System.currentTimeMillis();
-            hec.decodeStep(inputData);
-            long endTime = System.currentTimeMillis();
-            sumTime += endTime-startTime;
+            int calLen = 1024*1024;
+            for (int p = 0; p<calLen ; p++) {
+                int mlen = cellsize/calLen;
+                byte[][] mInput = new byte[n][];
+                for (int ii=0; ii<n; ii++){
+                    if (inputData[i] == null)
+                        mInput[i] = null;
+                    else {
+                        byte[] tmp = new byte[mlen];
+                        System.arraycopy(inputData[i], mlen*p, tmp, 0, mlen);
+                        mInput[i] = tmp;
+                    }
+                }
+                long startTime = System.currentTimeMillis();
+                hec.decodeStep(mInput);
+                long endTime = System.currentTimeMillis();
+                sumTime += endTime - startTime;
+            }
+            // long startTime = System.currentTimeMillis();
+            // hec.decodeStep(inputData);
+            // long endTime = System.currentTimeMillis();
+            // sumTime += endTime-startTime;
         }
         System.out.println("The decoding time is：" + sumTime + "ms");
         System.out.println("The Transformation time is：" + TsumTime + "ms");
@@ -125,7 +143,7 @@ public class hadoopEC_MSR {
     }
 
     public static final void main(String[] args) throws Exception {
-        hadoopEC_MSR hec = new hadoopEC_MSR(6,4,1024*128, 128*1024*1024);
+        hadoopEC_MSR hec = new hadoopEC_MSR(6,4,1024*1024*4, 512*1024*1024);
         int cellsize = hec.cellsize;
         String prefix = String.valueOf(cellsize) + "_";
         hec.nodeEncode(prefix);
