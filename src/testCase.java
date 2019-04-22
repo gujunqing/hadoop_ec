@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -119,10 +120,23 @@ public class testCase {
         int n = 4;
         int k = 2;
         int cellSize = 1024;
-        testCase ec = new testCase(n, k, cellSize);
+        // testCase ec = new testCase(n, k, cellSize);
+        ByteBuffer realInput = ByteBuffer.allocate(100);
+        ByteBuffer realOutput = ByteBuffer.allocate(100);
+        for (int i=0; i<100; i++) {
+            realInput.put((byte)i);
+        }
+        for (int i=0; i<100/20; i++) {
+            int pos = (4-i)*20;
+            realInput.position(pos);
+            realInput.limit(pos+20);
+            realOutput.put(realInput.duplicate());
+        }
+        System.out.println(realOutput);
+        /*
         ec.MSRencodeStep();
         long TsumTime = 0;
-        for (int i=0; i<512*1024; i++) {
+        for (int i=0; i<1; i++) {
             long TstartTime = System.currentTimeMillis();
             byte[][] input = ec.MSRgetData();
             ec.MSRdecodeStep(input);
@@ -130,6 +144,7 @@ public class testCase {
             TsumTime += TendTime - TstartTime;
         }
         System.out.println(TsumTime);
+        */
     }
 
     private void printMatrix(byte[][] matrix, int row, int col) {

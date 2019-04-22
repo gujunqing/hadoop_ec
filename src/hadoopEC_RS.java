@@ -113,12 +113,12 @@ public class hadoopEC_RS {
                 int mlen = cellsize/calLen;
                 byte[][] mInput = new byte[n][];
                 for (int ii=0; ii<n; ii++){
-                    if (inputData[i] == null)
-                        mInput[i] = null;
+                    if (inputData[ii] == null)
+                        mInput[ii] = null;
                     else {
                         byte[] tmp = new byte[mlen];
-                        System.arraycopy(inputData[i], mlen*p, tmp, 0, mlen);
-                        mInput[i] = tmp;
+                        System.arraycopy(inputData[ii], mlen*p, tmp, 0, mlen);
+                        mInput[ii] = tmp;
                     }
                 }
                 long startTime = System.currentTimeMillis();

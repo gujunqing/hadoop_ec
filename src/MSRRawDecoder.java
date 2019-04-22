@@ -299,7 +299,7 @@ public class MSRRawDecoder extends RawErasureDecoder {
                     byte ttmp = 0;
                     for (j = 0; j < getNumDataUnits()*l; j++) {
                         ttmp ^= GF256.gfMul(invertMatrix[j * getNumDataUnits()*l + i],
-                                encodeMatrix[getNumDataUnits() * (erasedIndexes[p]*l+q) + j]);
+                                encodeMatrix[getNumDataUnits()*l * (erasedIndexes[p]*l+q) + j]);
                     }
                     decodeMatrix[getNumDataUnits()*l * (p*l+q) + i] = ttmp;
                 }
