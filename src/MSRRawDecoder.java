@@ -66,7 +66,6 @@ public class MSRRawDecoder extends RawErasureDecoder {
         MSRMatrix = new byte[getNumParityUnits() * getNumAllUnits() * l * l];
         RSUtil.genMSRMatrix(MSRMatrix, numAllUnits, getNumDataUnits());
         // DumpUtil.dumpMatrix(MSRMatrix, getNumParityUnits()*l, getNumAllUnits()*l);
-
     }
 
     @Override

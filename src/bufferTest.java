@@ -1,44 +1,51 @@
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.Future;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 public class bufferTest {
+    private Random randGen = new Random();
+    private int cellsize = 1024*1024;
+    private byte[] genData(int cellsize) {
+        byte[] tmp = new byte[cellsize];
+        for (int i=0; i<cellsize; i++) {
+            tmp[i] = (byte)randGen.nextInt(256);
+        }
+        return tmp;
+    }
+
+    public byte[] getDataNode() {
+        return genData(cellsize);
+    }
+    public bufferTest(int size) {
+        BufferedOutputStream bos = null;
+        FileOutputStream fos = null;
+        File file = null;
+        file = new File("/Users/gujunqing/Desktop/testFile");
+        try {
+            fos = new FileOutputStream(file);
+            bos = new BufferedOutputStream(fos);
+            for (int i=0; i<1024; i++) {
+                byte[] bfile = getDataNode();
+                bos.write(bfile);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void main(String[] args) throws Exception {
+        int cellsize = 1024*1024*2;
+        readHDFS r = new readHDFS(cellsize, 128*cellsize);
+        r.readFile("/test/testFile");
+
         // testCase ec = new testCase(n, k, cellSize);
-        ByteBuffer realInput = ByteBuffer.allocate(10);
-        ByteBuffer realOutput = ByteBuffer.allocate(10);
-        for (int i = 0; i < 10; i++) {
-            realInput.put((byte) i);
-        }
-        realOutput = realInput.duplicate();
-        realOutput.position(2);
-        realOutput.put((byte)12);
-        for (int i = 0; i < 10; i++) {
-            System.out.print(realOutput.get(i));
-        }
-        System.out.println();
-        for (int i = 0; i < 10; i++) {
-            System.out.print(realInput.get(i));
-        }
-        /*
-        for (int i = 0; i < 10 / 2; i++) {
-            int pos = (4 - i) * 2;
-            realInput.position(pos);
-            realInput.limit(pos + 2);
-            realOutput.put(realInput.duplicate());
-        }
-        realOutput.position(9);
-        realOutput.put((byte)12);
-        realInput.position(0);
-        realInput.limit(10);
-        for (int i = 0; i < 10; i++) {
-            System.out.print(realOutput.get(i));
-        }
-        System.out.println();
-        for (int i = 0; i < 10; i++) {
-            System.out.print(realInput.get(i));
-        }
-        */
+
     }
 }

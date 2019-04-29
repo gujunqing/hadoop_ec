@@ -18,8 +18,8 @@ public class readHDFS {
 
     public readHDFS(int cellSize, int nodeSize) throws Exception{
         conf = new Configuration();
-        conf.set("fs.default.name", "hdfs://192.168.1.112:9000");
-        fs = FileSystem.get(new URI("hdfs://192.168.1.112:9000"),conf,"gua1s");
+        conf.set("fs.default.name", "hdfs://192.168.1.105:9000");
+        fs = FileSystem.get(new URI("hdfs://192.168.1.105:9000"),conf,"gua1s");
         this.nodeSize = nodeSize;
         this.cellSize = cellSize;
         this.nodeLen = nodeSize/cellSize;

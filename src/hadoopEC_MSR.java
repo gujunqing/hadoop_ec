@@ -95,7 +95,7 @@ public class hadoopEC_MSR {
         long sumTime = 0;
         long TsumTime = 0;
         long TsumData = 0;
-        for (int i=0; i<hec.nodeLen/l; i++){
+        for (int i=0; i<hec.nodeLen/l; i++) {
             byte[][] inputData = new byte[n*l][];
             long TstartTime = System.currentTimeMillis();
             int [][] dataIndexes = MSRRawDecoder.searchData(hec.erasedIndexes, n, k);
