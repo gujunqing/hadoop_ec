@@ -31,7 +31,7 @@ public class hadoopEC_XOR {
 
     public void nodeEncode(String prefix) throws Exception {
         readHDFS hdfsRead = new readHDFS(cellsize, nodeSize);
-        GenHDFSData hdfsWrite =new GenHDFSData(k, cellsize, nodeSize);
+        GenHDFSData hdfsWrite =new GenHDFSData(k, cellsize);
         for (int i=0; i<nodeLen; i++) {
             for (int j=0; j < k; j++) {
                 String pathName = prefix + String.valueOf(j) + "/" + String.valueOf(i);
@@ -74,7 +74,7 @@ public class hadoopEC_XOR {
         String prefix = String.valueOf(cellsize) + "_";
         hec.erasedIndexes = new int[errorNum];
         readHDFS hdfsRead = new readHDFS(cellsize, hec.nodeSize);
-        GenHDFSData hdfsWrite =new GenHDFSData(k, cellsize, hec.nodeSize);
+        GenHDFSData hdfsWrite =new GenHDFSData(k, cellsize);
         hec.erasedIndexes[0] = 0;
 
         long sumTime = 0;

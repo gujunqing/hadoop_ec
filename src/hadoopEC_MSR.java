@@ -31,7 +31,7 @@ public class hadoopEC_MSR {
 
     public void nodeEncode(String prefix) throws Exception {
         readHDFS hdfsRead = new readHDFS(cellsize, nodeSize);
-        GenHDFSData hdfsWrite =new GenHDFSData(k, cellsize, nodeSize);
+        GenHDFSData hdfsWrite =new GenHDFSData(k, cellsize);
         for (int i=0; i<nodeLen/l; i++) {
             for (int j=0; j < k; j++) {
                 for (int e=0; e < l; e++){
@@ -89,7 +89,7 @@ public class hadoopEC_MSR {
         String prefix = String.valueOf(cellsize) + "_";
         hec.erasedIndexes = new int[errorNum];
         readHDFS hdfsRead = new readHDFS(cellsize, hec.nodeSize);
-        GenHDFSData hdfsWrite =new GenHDFSData(k, cellsize, hec.nodeSize);
+        GenHDFSData hdfsWrite =new GenHDFSData(k, cellsize);
         for(int i = 0; i < errorNum; ++i)
             hec.erasedIndexes[i] = i;
         long sumTime = 0;

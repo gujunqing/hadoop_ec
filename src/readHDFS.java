@@ -14,16 +14,13 @@ public class readHDFS {
     private Configuration conf = null;
     private int cellSize;
     private int nodeSize;
-    private int nodeLen;
 
     public readHDFS(int cellSize, int nodeSize) throws Exception{
         conf = new Configuration();
         conf.set("fs.default.name", "hdfs://192.168.1.105:9000");
-        fs = FileSystem.get(new URI("hdfs://192.168.1.105:9000"),conf,"gua1s");
+        fs = FileSystem.get(new URI("hdfs://192.168.1.105:9000"),conf,"root");
         this.nodeSize = nodeSize;
         this.cellSize = cellSize;
-        this.nodeLen = nodeSize/cellSize;
-        assert nodeSize%cellSize == 0;
     }
 
     public byte[] readFile(String pathName) throws Exception {
