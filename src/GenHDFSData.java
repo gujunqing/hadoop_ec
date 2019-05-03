@@ -53,28 +53,26 @@ public class GenHDFSData {
     }
 
     public void fillFile(int k, int l) throws Exception {
-        for (int i=0; i<nodeSize; i++) {
-            for (int j=0; j<k; j++) {
-                // String pathName = prefix + String.valueOf(i);
-                for (int e=0; e<l; e++) {
-                    String pathName = "/expr/data" + String.valueOf(j) + "/" + String.valueOf(i) + "_" +
-                            String.valueOf(e);
-                    createFile(pathName);
-                }
+        for (int j=0; j<k; j++) {
+            // String pathName = prefix + String.valueOf(i);
+            for (int e=0; e<l; e++) {
+                String pathName = "/exp/data/" + String.valueOf(j) + "/" +
+                        String.valueOf(e);
+                createFile(pathName);
             }
         }
     }
 
     public static final void main(String[] args) throws Exception {
         int nodeSize = 128;
-        int cellSize = 1024;
-        int k = 2;
+        int cellSize = 1024*1024*4;
+        int k = 4;
         int r = 2;
         int m = (k+r)/r;
         int l = (int)Math.pow(r, m);
         GenHDFSData hdfs = new GenHDFSData(cellSize, nodeSize);
-        hdfs.deleteAll("/expr/data");
-        //hdfs.fillFile(2, l);
+        // hdfs.deleteAll("/exp/data/");
+        hdfs.fillFile(k, l);
         // for (int i=0; i<n; i++) {
         //     hdfs.makdir(String.valueOf(i));
         // }
