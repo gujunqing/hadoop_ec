@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.HashMap;
 
-public class readTrace {
+public class readH {
     private HashMap<Integer, Double> mapProbab = new HashMap<Integer, Double>();
     private HashMap<Integer, Boolean> mapHot = new HashMap<Integer, Boolean>();
     private HashMap<Integer, Integer> mapRead = new HashMap<Integer, Integer>();
@@ -33,7 +33,7 @@ public class readTrace {
     public int cellSize;
     public int nodeSize;
 
-    public readTrace(int cellSize, int nodeSize, int blockSize) throws Exception {
+    public readH(int cellSize, int nodeSize, int blockSize) throws Exception {
         this.realBlockSize = blockSize;
         this.cellSize = cellSize;
         this.nodeSize = nodeSize;
@@ -67,14 +67,10 @@ public class readTrace {
                 arrs = line.split(",");
                 int blockNo = Integer.valueOf(arrs[0]);
                 int isHot = Integer.valueOf(arrs[1]);
-                int readNum = Integer.valueOf(arrs[2]);
-                int writeNum = Integer.valueOf(arrs[3]);
                 double prop = Double.valueOf(arrs[4]);
                 mapProbab.put(blockNo, prop);
                 mapHot.put(blockNo, (isHot == 1));
-                mapRead.put(blockNo, readNum);
-                mapWrite.put(blockNo, writeNum);
-                ismsr.put(blockNo, false);
+                // ismsr.put(blockNo, false);
             }
             br.close();
             fr.close();
@@ -147,34 +143,28 @@ public class readTrace {
             if (ran < mapProbab.get(blockno)*1000) {
                 // the block is wrong
                 input = new byte[k+r][];
-                // output = new byte [1][];
-                // output[0] = new byte[cellSize*l];
                 int errorno = randomGenerator.nextInt(k);
-                if (ismsr.get(blockno)) {
-                    // Is use msr code
-                    result += "msr\n";
-                    int[][] formatArray = MSRNewDecoder.requiredDataFormat(errorno, k+r, k);
+                if (mapHot.get(blockno)) {
+                    // Is use RS(2,2)
+                    result += "rs(2,2)\n";
                     startTime = System.currentTimeMillis();
                     for (int i=0; i<k; i++) {
                         input[i] = new byte[cellSize*l];
                         for (int j=0; j<l; j++) {
-                            if (formatArray[i][j] == 1) {
-                                String filePath = "/expr/data" + String.valueOf(i) + "/" + String.valueOf(blockno) + "_" +
-                                        String.valueOf(j);
-                                byte[] tmp = hdfsRead.readFile(filePath);
-                                System.arraycopy(tmp, 0, input[i], j * cellSize, cellSize);
-                            }
+                            String filePath = "/expr2/data" + String.valueOf(i) + "/" + String.valueOf(blockno) + "_" +
+                                    String.valueOf(j);
+                            byte[] tmp = hdfsRead.readFile(filePath);
+                            System.arraycopy(tmp, 0, input[i], j * cellSize, cellSize);
+
                         }
                     }
                     for (int i=0; i<r; i++) {
                         input[k+i] = new byte[cellSize*l];
                         for (int j=0; j<l; j++) {
-                            if (formatArray[i][j] == 1) {
-                                String filePath = "/expr/parity" + String.valueOf(i) + "/" + String.valueOf(blockno) + "_" +
-                                        String.valueOf(j);
-                                byte[] tmp = hdfsRead.readFile(filePath);
-                                System.arraycopy(tmp, 0, input[k+i], j * cellSize, cellSize);
-                            }
+                            String filePath = "/exp2/parity" + String.valueOf(i) + "/" + String.valueOf(blockno) + "_" +
+                                    String.valueOf(j);
+                            byte[] tmp = hdfsRead.readFile(filePath);
+                            System.arraycopy(tmp, 0, input[k+i], j * cellSize, cellSize);
                         }
                     }
                     endTime = System.currentTimeMillis();
@@ -191,7 +181,7 @@ public class readTrace {
                         if (errorno == i) continue;
                         input[i] = new byte[cellSize*l];
                         for (int j=0; j<l; j++) {
-                            String filePath = "/expr/data" + String.valueOf(i) + "/" + String.valueOf(blockno) + "_" +
+                            String filePath = "/expr/data2" + String.valueOf(i) + "/" + String.valueOf(blockno) + "_" +
                                     String.valueOf(j);
                             byte[] tmp = hdfsRead.readFile(filePath);
                             System.arraycopy(tmp, 0, input[i], j * cellSize, cellSize);
@@ -199,7 +189,7 @@ public class readTrace {
                     }
                     input[k] = new byte[cellSize*l];
                     for (int j=0; j<l; j++) {
-                        String filePath = "/expr/parity" + String.valueOf(0) + "/" + String.valueOf(blockno) + "_" +
+                        String filePath = "/expr/parity2" + String.valueOf(0) + "/" + String.valueOf(blockno) + "_" +
                                 String.valueOf(j);
                         byte[] tmp = hdfsRead.readFile(filePath);
                         System.arraycopy(tmp, 0, input[k], j * cellSize, cellSize);
@@ -225,7 +215,7 @@ public class readTrace {
                 startTime = System.currentTimeMillis();
                 for (int i=0; i<k; i++) {
                     for (int j=0; j<l; j++) {
-                        String filePath = "/expr/data" + String.valueOf(i) + "/" + String.valueOf(blockno) + "_" +
+                        String filePath = "/expr/data2" + String.valueOf(i) + "/" + String.valueOf(blockno) + "_" +
                                 String.valueOf(j);
                         hdfsRead.readFile(filePath);
                     }
@@ -251,7 +241,7 @@ public class readTrace {
             for (int i=0; i<k; i++) {
                 for (int j=0; j<l; j++) {
                     byte[] tmp = hdfsWrite.genRanData();
-                    String filePath = "/expr/data" + String.valueOf(i) + "/" + String.valueOf(blockno) + "_" +
+                    String filePath = "/expr/data2" + String.valueOf(i) + "/" + String.valueOf(blockno) + "_" +
                             String.valueOf(j);
                     hdfsWrite.createFile(filePath, tmp);
                     System.arraycopy(tmp, 0, input[i], cellSize*j, cellSize);
@@ -275,7 +265,7 @@ public class readTrace {
                 for (int j=0; j<l; j++) {
                     byte[] tmp = new byte[cellSize];
                     System.arraycopy(output[i], cellSize*j, tmp, 0, cellSize);
-                    String filePath = "/expr/parity" + String.valueOf(i) + "/" + String.valueOf(blockno) + "_" +
+                    String filePath = "/expr/parity2" + String.valueOf(i) + "/" + String.valueOf(blockno) + "_" +
                             String.valueOf(j);
                     hdfsWrite.createFile(filePath, tmp);
                 }
@@ -332,7 +322,6 @@ public class readTrace {
                 arrs = line.split("\t");
                 String restr = doExec(arrs);
                 fileWritter.write(restr);
-
                 idx++;
             }
             fileWritter.close();
